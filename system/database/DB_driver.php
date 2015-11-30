@@ -119,7 +119,7 @@ class CI_DB_driver {
 		{
 			log_message('error', 'Unable to connect to the database');
 			
-			var_dump(sqlsrv_errors());
+			// var_dump(sqlsrv_errors());
 			if ($this->db_debug)
 			{
 				$this->display_error('db_unable_to_connect');

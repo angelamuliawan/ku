@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /ujianonlinelatest-master/
+RewriteBase /ku/
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /ujianonlinelatest-master/index.php/$1 [L]
+RewriteRule ^(.*)$ /ku/index.php/$1 [L]
