@@ -50,8 +50,8 @@ $active_record = TRUE;
 
 //Dummy
 //$db['default']['hostname'] = 'HP-PC\SQLEXPRESS'; 
-$db['default']['database'] = 'ujianonline';
-$db['default']['dbdriver'] = 'sqlsrv';
+$db['default']['database'] = 'baz';
+$db['default']['dbdriver'] = 'mysqli';
 $db['default']['dbprefix'] = '';
 $db['default']['pconnect'] = FALSE;
 $db['default']['db_debug'] = FALSE;
