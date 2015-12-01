@@ -27,8 +27,9 @@ class ListCategory extends AB_Controller {
 				array('pageContent'=>$pageContent));
 	}
 	public function getCategoryPerDegree(){
-		$res = $this->sp('GetCategoryPerDegree');
-		$data = $res -> result();
+		
+		$res = $this->db->query("CALL GetCategoryPerDegree");
+		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
    }
 }
