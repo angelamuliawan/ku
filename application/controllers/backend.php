@@ -2,196 +2,188 @@
 
 class BackEnd extends AB_Controller {
 
-	/**
-	 * Index Page for this controller.
-	 *
-	 * Maps to the following URL
-	 * 		http://example.com/index.php/welcome
-	 *	- or -  
-	 * 		http://example.com/index.php/welcome/index
-	 *	- or -
-	 * Since this controller is set as the default controller in 
-	 * config/routes.php, it's displayed at http://example.com/
-	 *
-	 * So any other public methods not prefixed with an underscore will
-	 * map to /index.php/welcome/<method_name>
-	 * @see http://codeigniter.com/user_guide/general/urls.html
-	 */
-	public function index()
-	{
-		if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
+	public function user_authorize(){
+		if( $this->session->userdata('loggedin') == NULL || $this->session->userdata('userrole') != 1 ) {
 			redirect('home');
-		$pageContent = $this->load->view('content/backend', '',  TRUE);
-
-		//Load Master View
-		$this->load->view('master/master',
-				array('pageContent'=>$pageContent));
+		}
 	}
-	public function getDegree(){
-		$res = $this->sp('GetDegree');
+	
+	public function index() {
+		$this->user_authorize();
+		$pageContent = $this->load->view('content/backend', '',  TRUE);
+		$this->load->view('master/master', array('pageContent' => $pageContent));
+	}
+
+	public function getDegree() {
+		$res = $this->db->query("CALL GetDegree");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-   public function getCategory(){
-   		if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-		$res = $this->sp('GetCategory');
+   	}
+
+   	public function getCategory(){
+   		$this->user_authorize();
+		$res = $this->db->query("CALL GetCategory");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-   public function getCategoryByDegreeID(){
-		// asdf
+   	}
+
+   	public function getCategoryByDegreeID(){
 		$post = $this->rest->post();
-		$res = $this->sp('GetCategoryByDegreeID', array(
-			'DegreeID' => $post->DegreeID
+		$res = $this->db->query("CALL GetCategoryByDegreeID(?)", array(
+			$post->DegreeID
 		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
-   }
+   	}
+
    	public function getLevel(){
-   		if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-		$res = $this->sp('GetLevel');
+   		$this->user_authorize();
+		$res = $this->db->query("CALL GetLevel");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-      public function GetUserAndTest(){
-   		if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-		$res = $this->sp('GetUserAndTest');
+  	}
+
+    public function GetUserAndTest(){
+   		$this->user_authorize();
+		$res = $this->db->query("CALL GetUserAndTest");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-   public function GetUserAndAnswer(){
-   		if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-		$res = $this->sp('GetUserAndAnswer');
+   	}
+
+	public function GetUserAndAnswer(){
+		$this->user_authorize();
+		$res = $this->db->query("CALL GetUserAndAnswer");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-   public function GetAllTest(){
-   		if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-		$res = $this->sp('GetAllTest');
+	}
+
+	public function GetAllTest(){
+		$this->user_authorize();
+		$res = $this->db->query("CALL GetAllTest");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
-   }
+	}
 
-   	public function changeDegree(){
-   		if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-   		if($post->DegreeID == -1)
-			$res = $this->sp('insertDegree', 
-				array('DegreeName' => $post->DegreeName,
-					'AuditedUser' => $this->session->userdata('username')
+	public function changeDegree(){
+		$this->user_authorize();
+		$post = $this->rest->post();
+		if( $post->DegreeID == -1 ) {
+			$res = $this->db->query("CALL insertDegree(?,?)", array(
+				$post->DegreeName,
+				$this->session->userdata('username')
 			));
-		else 
-			$res = $this->sp('EditDegree', 
-				array('DegreeID' => $post->DegreeID,
-					'DegreeName' => $post->DegreeName,
-					'AuditedUser' =>  $this->session->userdata('username')
+		} else {
+			$res = $this->db->query("CALL EditDegree(?,?)", array(
+				$post->DegreeName,
+				$this->session->userdata('username')
 			));
+		}
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
-   }
+	}
 
-    public function changeLevel(){
-    	if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-   		if($post->LevelID == -1)
-			$res = $this->sp('InsertLevel', 
-				array('LevelName' => $post->LevelName,
-					'AuditedUser' =>  $this->session->userdata('username')
-			));
-		else 
-			$res = $this->sp('EditLevel', 
-				array('LevelID' => $post->LevelID,
-					'LevelName' => $post->LevelName,
-					'AuditedUser' =>  $this->session->userdata('username')
-			));
-		$data = $res->result();
-		$this->load->view('json_view', array('json' => $data));
-   }
+	public function changeLevel(){
+		$this->user_authorize();
+		$post = $this->rest->post();
 
-    public function changeCategory(){
-    	if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-   		if($post->CategoryID == -1)
-			$res = $this->sp('InsertCategory', 
-				array('CategoryName' => $post->CategoryName,
-					'DegreeID' => $post->DegreeID,
-					'AuditedUser' =>  $this->session->userdata('username')
+		if( $post->LevelID == -1 ) {
+			$res = $this->db->query("CALL InsertLevel(?,?)", array(
+				$post->LevelName,
+				$this->session->userdata('username')
 			));
-		else 
-			$res = $this->sp('EditCategory', 
-				array('CategoryID' => $post->CategoryID,
-					'CategoryName' => $post->CategoryName,
-					'DegreeID' => $post->DegreeID,
-					'AuditedUser' =>  $this->session->userdata('username')
+		} else {
+			$res = $this->db->query("CALL EditLevel(?,?,?)", array(
+				$post->LevelID,
+				$post->LevelName,
+				$this->session->userdata('username')
 			));
+		}
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
-   }
+	}
 
-    public function deleteDegree(){
-    	if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-		$res = $this->sp('DeleteDegree', 
-				array('DegreeID' => $post->DegreeID,
-					'AuditedUser' =>  $this->session->userdata('username')
-			));
-		$data = $res->result();
-		$this->load->view('json_view', array('json' => $data));
-   }
+	public function changeCategory(){
+		$this->user_authorize();
+		$post = $this->rest->post();
 
-    public function deleteLevel(){
-    	if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-		$res = $this->sp('DeleteLevel', 
-				array('LevelID' => $post->LevelID,
-					'AuditedUser' => $this->session->userdata('username')
+		if( $post->CategoryID == -1 ) {
+			$res = $this->db->query("CALL InsertCategory(?,?,?,?)", array(
+				$post->CategoryID,
+				$post->CategoryName,
+				$post->DegreeID,
+				$this->session->userdata('username')
 			));
+		} else {
+			$res = $this->db->query("CALL EditCategory(?,?,?,?)", array(
+				$post->CategoryID,
+				$post->CategoryName,
+				$post->DegreeID,
+				$this->session->userdata('username')
+			));
+		}
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-   public function deleteCategory(){
-    	if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-		$res = $this->sp('DeleteCategory', 
-				array('CategoryID' => $post->CategoryID,
-					'AuditedUser' => $this->session->userdata('username')
-			));
+	}
+
+	public function deleteDegree(){
+		$this->user_authorize();
+		$post = $this->rest->post();
+
+		$res = $this->db->query("CALL DeleteDegree(?,?)", array(
+			$post->DegreeID,
+			$this->session->userdata('username')
+		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-    public function deleteUser(){
-    	if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-		$res = $this->sp('DeleteUser', 
-				array('UserID' => $post->UserID,
-					'AuditedUser' => $this->session->userdata('username')
-			));
+	}
+
+	public function deleteLevel(){
+		$this->user_authorize();
+		$post = $this->rest->post();
+
+		$res = $this->db->query("CALL DeleteLevel(?,?)", array(
+			$post->LevelID,
+			$this->session->userdata('username')
+		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
-   }
-    public function deleteTest(){
-    	if($this->session->userdata('loggedin')==NULL || $this->session->userdata('userrole')!=1)
-			redirect('home');
-   		$post = $this->rest->post();
-		$res = $this->sp('DeleteTest', 
-				array('TestID' => $post->TestID,
-					'AuditedUser' => $this->session->userdata('username')
-			));
+	}
+
+	public function deleteCategory(){
+		$this->user_authorize();
+		$post = $this->rest->post();
+
+		$res = $this->db->query("CALL DeleteCategory(?,?)", array(
+			$post->CategoryID,
+			$this->session->userdata('username')
+		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
-   }
+	}
+
+	public function deleteUser(){
+		$this->user_authorize();
+		$post = $this->rest->post();
+
+		$res = $this->db->query("CALL DeleteUser(?,?)", array(
+			$post->UserID,
+			$this->session->userdata('username')
+		));
+		$data = $res->result();
+		$this->load->view('json_view', array('json' => $data));
+	}
+
+	public function deleteTest(){
+		$this->user_authorize();
+		$post = $this->rest->post();
+
+		$res = $this->db->query("CALL DeleteTest(?,?)", array(
+			$post->TestID,
+			$this->session->userdata('username')
+		));
+		$data = $res->result();
+		$this->load->view('json_view', array('json' => $data));
+	}
 }
 
 /* End of file welcome.php */

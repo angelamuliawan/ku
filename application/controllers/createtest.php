@@ -2,49 +2,36 @@
 
 class CreateTest extends AB_Controller {
 
-	/**
-	 * Index Page for this controller.
-	 *
-	 * Maps to the following URL
-	 * 		http://example.com/index.php/welcome
-	 *	- or -  
-	 * 		http://example.com/index.php/welcome/index
-	 *	- or -
-	 * Since this controller is set as the default controller in 
-	 * config/routes.php, it's displayed at http://example.com/
-	 *
-	 * So any other public methods not prefixed with an underscore will
-	 * map to /index.php/welcome/<method_name>
-	 * @see http://codeigniter.com/user_guide/general/urls.html
-	 */
-	public function index()
-	{
-		if($this->session->userdata('loggedin')==NULL) redirect('home');
-		$pageContent = $this->load->view('content/createtest', '',  TRUE);
-
-		//Load Master View
-		$this->load->view('master/master',
-				array('pageContent'=>$pageContent));
+	public function do_alert($message){
+		echo '<script type="text/javascript">alert('+$message+')</script>';
 	}
-	public function insertTest()
-	{
+
+	public function user_authorize(){
+		if( $this->session->userdata('loggedin') == NULL ) {
+			redirect('home');
+		}
+	}
+
+	public function index() {
+		$this->user_authorize();
+		$pageContent = $this->load->view('content/createtest', '',  TRUE);
+		$this->load->view('master/master', array('pageContent' => $pageContent));
+	}
+
+	public function insertTest() {
 		$post = $this->rest->post();
-		// print_r($post);
-		// die();
-		$res = $this->sp('InsertTest',
-			array(
-				'TestName'=> $post->TestName, 
-				'TestDescription' => $post->TestDescription,
-				'CategoryID' => $post->CategoryID,
-				'LevelID'=> $post->LevelID,
-				'AccessType'=> $post->AccessType, 
-				'UserID' => $this->session->userdata('userid'),
-				'PublishStartDate'=> $post->PublishStartDate,
-				'PublishEndDate'=> $post->PublishEndDate, 
-				'UploadTutorial'=> $post->UploadTutorial,
-				'AuditedUser' => $this->session->userdata('username')
+		$res = $this->db->query("CALL InsertTest(?,?,?,?,?,?,?,?,?,?)", array(
+			$post->TestName,
+			$post->TestDescription,
+			$post->CategoryID,
+			$post->LevelID,
+			$post->AccessType, 
+			$this->session->userdata('userid'),
+			$post->PublishStartDate,
+			$post->PublishEndDate, 
+			$post->UploadTutorial,
+			$this->session->userdata('username')
 		));
-		//$this->do_alert($res);
 		$TestID = $res->result()[0]->ID;
 		$this->load->view('json_view', array('json' => $TestID));
 	}
@@ -58,45 +45,38 @@ class CreateTest extends AB_Controller {
 		
 		for($i = 0; $i < count($listTestDetail); $i++){
 			
-			$TestDetailID = $this->sp('InsertTestDetail',
-				array(
-					'TestQuestion'=> $listTestDetail[$i]->TestQuestion, 
-					'TestURL' => $listTestDetail[$i]->TestURL,
-					'TestID' => $TestID,
-					'AuditedUser' => $this->session->userdata('username')
-			))->result()[0]->ID;
+			$res = $this->db->query("CALL InsertTestDetail(?,?,?,?)", array(
+				$listTestDetail[$i]->TestQuestion, 
+				$listTestDetail[$i]->TestURL,
+				$TestID,
+				$this->session->userdata('username')
+			));
+			$TestDetailID = $res->result()[0]->ID;
 			
-			//$this->do_alert(count($listTestDetailAnswer[$i]));
 			for($j = 0; $j < count($listTestDetailAnswer[$i]); $j++){
-				$this->sp('InsertTestDetailAnswer',
-					array(
-						'TestDetailAnswerName'=> $listTestDetailAnswer[$i][$j]->TestDetailAnswerName, 
-						'TestDetailURL' => $listTestDetailAnswer[$i][$j]->TestDetailURL,
-						'isAnswer' => $listTestDetailAnswer[$i][$j]->isAnswer,
-						'TestDetailID' => $TestDetailID,
-						'AuditedUser' => $this->session->userdata('username')
+				$this->db->query('CALL InsertTestDetailAnswer(?,?,?,?,?)', array(
+					$listTestDetailAnswer[$i][$j]->TestDetailAnswerName, 
+					$listTestDetailAnswer[$i][$j]->TestDetailURL,
+					$listTestDetailAnswer[$i][$j]->isAnswer,
+					$TestDetailID,
+					$this->session->userdata('username')
 				))->result();
 			}
 		}
 		$this->load->view('json_view', array('json' => 1));
 	}
 	
-	public function uploadfile()
-	{
-		//Load Uploader Library
+	public function uploadfile() {
 		$config['upload_path'] = 'packaged';
 		$config['allowed_types'] = 'doc|docx|zip|rar|pdf|xls';
 	
 		$this->load->library('upload', $config);
 	
-		if (!$this->upload->do_upload('qqfile'))
-		{
+		if (!$this->upload->do_upload('qqfile')) {
 			$error = array('error' => $this->upload->display_errors());
 			echo json_encode(array('status' => "-1", 'msg' => $error));
-	
 		}
-		else
-		{
+		else {
 			$data = array('upload_data' => $this->upload->data());
 			$ext = $data['upload_data']['file_ext'];
 			$name = $data['upload_data']['file_name'];		
@@ -104,38 +84,34 @@ class CreateTest extends AB_Controller {
 		}
 	}
 	
-	public function do_alert($message){
-		echo '<script type="text/javascript">alert('+$message+')</script>';
-	}
-	
 	public function getDegree(){
-		if($this->session->userdata('loggedin')==NULL)
-			redirect('home');
-		$res = $this->sp('GetDegree');
+		$this->user_authorize();
+		$res = $this->db->query("CALL GetDegree");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
 	}
+
 	public function getCategory(){
-		if($this->session->userdata('loggedin')==NULL)
-			redirect('home');
-		$res = $this->sp('GetCategory');
+		$this->user_authorize();
+		$res = $this->db->query("CALL GetCategory");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
 	}
+
 	public function getCategoryByDegreeID(){
-		if($this->session->userdata('loggedin')==NULL)
-			redirect('home');
+		$this->user_authorize();
 		$post = $this->rest->post();
-		$res = $this->sp('GetCategoryByDegreeID', array(
-			'DegreeID' => $post->DegreeID
+
+		$res = $this->db->query('CALL GetCategoryByDegreeID(?)', array(
+			$post->DegreeID
 		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
 	}
+
 	public function getLevel(){
-		if($this->session->userdata('loggedin')==NULL)
-			redirect('home');
-		$res = $this->sp('GetLevel');
+		$this->user_authorize();
+		$res = $this->db->query("CALL GetLevel");
 		$data = $res -> result();
 		$this->load->view('json_view', array('json' => $data));
 	}

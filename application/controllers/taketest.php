@@ -2,34 +2,16 @@
 
 class TakeTest extends AB_Controller {
 
-	/**
-	 * Index Page for this controller.
-	 *
-	 * Maps to the following URL
-	 * 		http://example.com/index.php/welcome
-	 *	- or -  
-	 * 		http://example.com/index.php/welcome/index
-	 *	- or -
-	 * Since this controller is set as the default controller in 
-	 * config/routes.php, it's displayed at http://example.com/
-	 *
-	 * So any other public methods not prefixed with an underscore will
-	 * map to /index.php/welcome/<method_name>
-	 * @see http://codeigniter.com/user_guide/general/urls.html
-	 */
-	public function index($param = 0)
-	{
+	public function index($param = 0) {
 		$data = array('TestID' => $param);
 		$pageContent = $this->load->view('content/taketest', $data,  TRUE);
-
-		//Load Master View
-		$this->load->view('master/master',array('pageContent'=>$pageContent));
+		$this->load->view('master/master', array('pageContent' => $pageContent));
 	}
 	
 	public function getQuestionList(){
 		$post = $this->rest->post();
-		$res = $this->sp('GetQuestionList', array(
-			'TestID' => $post->TestID
+		$res = $this->db->query('CALL GetQuestionList(?)', array(
+			$post->TestID
 		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
@@ -37,8 +19,8 @@ class TakeTest extends AB_Controller {
 	
 	public function getOptionList(){
 		$post = $this->rest->post();
-		$res = $this->sp('GetTestDetailByTestID', array(
-			'TestID' => $post->TestID
+		$res = $this->db->query('CALL GetTestDetailByTestID(?)', array(
+			$post->TestID
 		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
@@ -47,33 +29,35 @@ class TakeTest extends AB_Controller {
 	public function insertUserAnswer(){
 		$post = $this->rest->post();
 		$listUserAnswerDetail = $post->listUserAnswerDetail;
-		$UserAnswerID = $this->sp('InsertUserAnswer',
-				array(
-					'TestID'=> $post->TestID, 
-					'isInvited' => $post->isInvited,
-					'UserID' => $this->session->userdata('userid'),
-					'UserEmail' => $post->email,
-					'AuditedUser' => $this->session->userdata('username')
-		))->result()[0]->ID;
+
+		$res = $this->db->query('CALL InsertUserAnswer(?,?,?,?,?)', array(
+			$post->TestID, 
+			$post->isInvited,
+			$this->session->userdata('userid'),
+			$post->email,
+			$this->session->userdata('username')
+		));
+
+		$UserAnswerID = $res->result()[0]->ID;
 		
 		for($i = 0; $i < count($listUserAnswerDetail); $i++){
-			$this->sp('InsertUserAnswerDetail',
-				array(
-					'UserAnswerID'=> $UserAnswerID,
-					'TestDetailID' => $listUserAnswerDetail[$i]->TestDetailID,
-					'TestDetailAnswerID' => $listUserAnswerDetail[$i]->TestDetailAnswerID,
-					'AuditedUser' => $this->session->userdata('username')
+			$this->db->query('CALL InsertUserAnswerDetail(?,?,?,?)', array(
+				$UserAnswerID,
+				$listUserAnswerDetail[$i]->TestDetailID,
+				$listUserAnswerDetail[$i]->TestDetailAnswerID,
+				$this->session->userdata('username')
 			))->result();
 		}
+
 		$this->load->view('json_view', array('json' => 1));
 	}
 	
 	public function checkUserAnswer(){
 		$post = $this->rest->post();
-		$res = $this->sp('CheckUserAnswer', array(
-			'TestID' => $post->TestID,
-			'UserID' => $this->session->userdata('userid'),
-			'Email' => $post->email
+		$res = $this->db->query('CALL CheckUserAnswer(?,?,?)', array(
+			$post->TestID,
+			$this->session->userdata('userid'),
+			$post->email
 		));
 		$data = $res->result();
 		$this->load->view('json_view', array('json' => $data));
@@ -88,23 +72,22 @@ class TakeTest extends AB_Controller {
 		
 		for($i = 0; $i < count($listTestDetail); $i++){
 			
-			$TestDetailID = $this->sp('InsertTestDetail',
-				array(
-					'TestQuestion'=> $listTestDetail[$i]->TestQuestion, 
-					'TestURL' => $listTestDetail[$i]->TestURL,
-					'TestID' => $TestID,
-					'AuditedUser' => $this->session->userdata('username')
-			))->result()[0]->ID;
+			$res = $this->db->query('CALL InsertTestDetail(?,?,?,?)', array(
+				$listTestDetail[$i]->TestQuestion, 
+				$listTestDetail[$i]->TestURL,
+				$TestID,
+				$this->session->userdata('username')
+			));
+
+			$TestDetailID = $res->result()[0]->ID;
 			
-			//$this->do_alert(count($listTestDetailAnswer[$i]));
 			for($j = 0; $j < count($listTestDetailAnswer[$i]); $j++){
-				$this->sp('InsertTestDetailAnswer',
-					array(
-						'TestDetailAnswerName'=> $listTestDetailAnswer[$i][$j]->TestDetailAnswerName, 
-						'TestDetailURL' => $listTestDetailAnswer[$i][$j]->TestDetailURL,
-						'isAnswer' => $listTestDetailAnswer[$i][$j]->isAnswer,
-						'TestDetailID' => $TestDetailID,
-						'AuditedUser' => $this->session->userdata('username')
+				$this->db->query('CALL InsertTestDetailAnswer(?,?,?,?,?)', array(
+					$listTestDetailAnswer[$i][$j]->TestDetailAnswerName, 
+					$listTestDetailAnswer[$i][$j]->TestDetailURL,
+					$listTestDetailAnswer[$i][$j]->isAnswer,
+					$TestDetailID,
+					$this->session->userdata('username')
 				))->result();
 			}
 		}
